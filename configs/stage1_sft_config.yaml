@@ -1,0 +1,67 @@
+# Stage 1: Normal SFT Configuration
+# ===================================
+# "Teach the model to complete correctly"
+# Focus: Output structure, task framing, minimal behavior shaping
+
+stage: 1
+name: "Normal SFT (Prompt → Output)"
+
+# Inherit from base config
+base_config: "./base_config.yaml"
+
+# Stage-specific model settings
+model:
+  name: "Qwen/Qwen2.5-1.5B"
+
+# Training overrides for Stage 1
+training:
+  num_train_epochs: 3
+  learning_rate: 2.0e-5
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  
+  # Early stopping if loss doesn't improve
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+
+# Data format for Stage 1
+# Simple prompt → output format
+# NO system roles, NO chat structure
+data:
+  format: "prompt_output"
+  # Expected format:
+  # {
+  #   "prompt": "Question or task",
+  #   "output": "Correct completion"
+  # }
+  
+  max_length: 512
+  
+  # Datasets for Stage 1 (simple completion tasks)
+  datasets:
+    - name: "simple_qa"
+      path: "./data/stage1/simple_qa.jsonl"
+    - name: "task_completion"
+      path: "./data/stage1/task_completion.jsonl"
+
+# Prompt template for Stage 1 (minimal, no chat)
+prompt_template: |
+  {prompt}
+
+  Answer: {output}
+
+# Output paths for Stage 1
+output:
+  checkpoint_dir: "./outputs/stage1_sft/checkpoints"
+  model_dir: "./outputs/stage1_sft/model"
+  logs_dir: "./outputs/stage1_sft/logs"
+
+# Verification checklist for Stage 1
+# ✅ Loss decreases smoothly
+# ✅ Outputs are more task-correct
+# ❌ No expectation of "chat intelligence"
+# 
+# Expected behaviors (not bugs):
+# - Model may overfit phrasing
+# - No robustness to prompt variation

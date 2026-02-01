@@ -1,0 +1,110 @@
+# Stage 3: LoRA/QLoRA Configuration
+# ===================================
+# "Scale without breaking the model"
+# Focus: Memory efficiency, prevent catastrophic forgetting, industry-grade scaling
+
+stage: 3
+name: "Memory-Efficient SFT (LoRA / QLoRA)"
+
+# Inherit from base config
+base_config: "./base_config.yaml"
+
+# Model settings for Stage 3
+model:
+  name: "Qwen/Qwen2.5-1.5B"
+  
+  # Quantization for QLoRA (comment out for standard LoRA)
+  quantization:
+    load_in_4bit: true
+    bnb_4bit_compute_dtype: "bfloat16"
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true
+
+# LoRA Configuration
+lora:
+  r: 64                    # LoRA rank (higher = more capacity, more memory)
+  lora_alpha: 128          # Scaling factor (typically 2x r)
+  lora_dropout: 0.05       # Dropout for regularization
+  bias: "none"             # Don't train bias
+  task_type: "CAUSAL_LM"   # For causal language models
+  
+  # Target modules (model-specific)
+  # For Qwen2.5:
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  
+  # Alternative: Use 'all-linear' to target all linear layers
+  # target_modules: "all-linear"
+
+# Training overrides for Stage 3
+training:
+  num_train_epochs: 3
+  learning_rate: 2.0e-4    # Higher LR for LoRA (adapters train faster)
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  
+  # LoRA-specific settings
+  max_grad_norm: 0.3       # Lower for stability
+  warmup_ratio: 0.03
+  lr_scheduler_type: "cosine"
+  
+  # Memory optimization
+  gradient_checkpointing: true
+  optim: "paged_adamw_8bit"  # Memory-efficient optimizer for QLoRA
+
+# Data format for Stage 3
+data:
+  format: "instruction_response"
+  max_length: 1024
+  
+  # Use same datasets as Stage 2 for comparison
+  datasets:
+    - name: "alpaca_cleaned"
+      path: "./data/stage2/alpaca_cleaned.jsonl"
+    - name: "diverse_instructions"
+      path: "./data/stage2/diverse_instructions.jsonl"
+
+# Output paths for Stage 3
+output:
+  checkpoint_dir: "./outputs/stage3_lora/checkpoints"
+  adapter_dir: "./outputs/stage3_lora/adapter"  # LoRA adapters only
+  merged_dir: "./outputs/stage3_lora/merged"    # Base + LoRA merged
+  logs_dir: "./outputs/stage3_lora/logs"
+
+# Comparison experiments
+experiments:
+  # LoRA only (no quantization)
+  lora_only:
+    quantization: null
+    lora:
+      r: 64
+      
+  # QLoRA (4-bit quantization + LoRA)
+  qlora:
+    quantization:
+      load_in_4bit: true
+    lora:
+      r: 64
+      
+  # Different rank experiments
+  lora_r16:
+    lora:
+      r: 16
+      lora_alpha: 32
+      
+  lora_r128:
+    lora:
+      r: 128
+      lora_alpha: 256
+
+# Verification checklist for Stage 3
+# ✅ Training memory usage significantly reduced
+# ✅ Similar or better performance than full fine-tuning
+# ✅ No catastrophic forgetting of base model capabilities
+# ✅ Can merge adapters for deployment

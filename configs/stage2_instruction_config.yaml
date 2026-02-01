@@ -1,0 +1,100 @@
+# Stage 2: Instruction Tuning Configuration
+# ==========================================
+# "Teach the model how to be told what to do"
+# Focus: Instruction abstraction, paraphrase robustness, multi-task generalization
+
+stage: 2
+name: "Instruction Tuning (Instruction → Response)"
+
+# Inherit from base config
+base_config: "./base_config.yaml"
+
+# Stage-specific model settings
+model:
+  # Load Stage 1 checkpoint as starting point
+  name: "./outputs/stage1_sft/model"
+  # Or start fresh: "Qwen/Qwen2.5-1.5B"
+
+# Training overrides for Stage 2
+training:
+  num_train_epochs: 3
+  learning_rate: 1.0e-5  # Lower LR since we're fine-tuning from Stage 1
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+
+# Data format for Stage 2
+# Instruction → Input (optional) → Response format
+data:
+  format: "instruction_response"
+  # Expected format:
+  # {
+  #   "instruction": "...",
+  #   "input": "... (optional)",
+  #   "response": "..."
+  # }
+  
+  max_length: 1024  # Longer for more complex instructions
+  
+  # Datasets for Stage 2 (instruction-following)
+  datasets:
+    - name: "alpaca_cleaned"
+      path: "./data/stage2/alpaca_cleaned.jsonl"
+    - name: "diverse_instructions"
+      path: "./data/stage2/diverse_instructions.jsonl"
+
+# Prompt templates for Stage 2 (with randomization to prevent overfitting)
+prompt_templates:
+  # Template 1: Alpaca-style
+  - |
+    Below is an instruction that describes a task. Write a response that appropriately completes the request.
+    
+    ### Instruction:
+    {instruction}
+    
+    ### Input:
+    {input}
+    
+    ### Response:
+    {response}
+  
+  # Template 2: Simple instruction
+  - |
+    Instruction: {instruction}
+    {input}
+    
+    Response: {response}
+  
+  # Template 3: ChatML-style
+  - |
+    <|im_start|>system
+    You are a helpful assistant.
+    <|im_end|>
+    <|im_start|>user
+    {instruction}
+    {input}
+    <|im_end|>
+    <|im_start|>assistant
+    {response}
+    <|im_end|>
+
+# System message variations (for robustness)
+system_messages:
+  - "You are a helpful assistant."
+  - "You are an AI assistant that follows instructions carefully."
+  - "You are a knowledgeable and helpful AI."
+  - "You are an assistant designed to help users with their tasks."
+
+# Output paths for Stage 2
+output:
+  checkpoint_dir: "./outputs/stage2_instruction/checkpoints"
+  model_dir: "./outputs/stage2_instruction/model"
+  logs_dir: "./outputs/stage2_instruction/logs"
+
+# Verification checklist for Stage 2
+# ✅ Same task works across multiple phrasings
+# ✅ General instruction-following improves
+# ❌ May still hallucinate or be overconfident
