@@ -1,0 +1,51 @@
+# Base Configuration for LLM Post-Training Experiments
+# =====================================================
+
+# Model Configuration
+model:
+  # Base model - Qwen2.5-1.5B (not heavily post-trained, good for experiments)
+  name: "Qwen/Qwen2.5-1.5B"
+  # Alternatives:
+  # - "microsoft/phi-2"
+  # - "mistralai/Mistral-7B-v0.1" (if compute allows)
+  
+  torch_dtype: "bfloat16"  # or "float16" for older GPUs
+  device_map: "auto"
+  trust_remote_code: true
+
+# Training Hyperparameters (defaults, can be overridden per stage)
+training:
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4
+  num_train_epochs: 3
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  lr_scheduler_type: "cosine"
+  max_grad_norm: 1.0
+  
+  # Logging
+  logging_steps: 10
+  eval_steps: 100
+  save_steps: 500
+  
+  # Mixed precision
+  bf16: true  # Set to false and use fp16: true for older GPUs
+  
+  # Optimization
+  optim: "adamw_torch"
+  gradient_checkpointing: true
+
+# Data Configuration
+data:
+  max_length: 512
+  train_split: 0.9
+  seed: 42
+
+# Output paths
+output:
+  base_dir: "./outputs"
+  checkpoints_dir: "./outputs/checkpoints"
+  logs_dir: "./outputs/logs"
+  models_dir: "./outputs/models"

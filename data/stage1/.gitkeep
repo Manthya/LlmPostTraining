@@ -1,0 +1,5 @@
+# Placeholder for Stage 1 training data
+# Run the training notebook to generate sample data, or add your own JSONL files here.
+# 
+# Expected format (one JSON object per line):
+# {"prompt": "Question or task", "output": "Correct completion"}

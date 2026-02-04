@@ -1,0 +1,44 @@
+{
+  "data": {
+    "source": "alpaca-cleaned (filtered)",
+    "n_samples": 3000,
+    "max_length": 256,
+    "template": "Question: {instruction}\nAnswer:",
+    "filter_criteria": {
+      "max_response_tokens": 100,
+      "task_types": [
+        "qa",
+        "classification",
+        "short_generation"
+      ],
+      "exclude_complex": true
+    }
+  },
+  "training": {
+    "learning_rate": 1e-06,
+    "batch_size": 8,
+    "gradient_accumulation": 2,
+    "epochs": 1,
+    "warmup_steps": 100,
+    "weight_decay": 0.1,
+    "max_grad_norm": 0.5,
+    "lr_scheduler": "linear"
+  },
+  "regularization": {
+    "dropout": 0.1,
+    "data_mixing_ratio": 0.3,
+    "kl_penalty": 0.1
+  },
+  "lora": {
+    "r": 4,
+    "alpha": 8,
+    "dropout": 0.2,
+    "target_modules": [
+      "c_attn",
+      "c_proj",
+      "mlp.c_fc",
+      "mlp.c_proj"
+    ],
+    "learning_rate": 5e-05
+  }
+}
