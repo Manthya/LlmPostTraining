@@ -119,7 +119,7 @@ target_modules = ["c_attn", "c_proj"]  # GPT-2 attention
 
 #### The Problem: Distribution Shift
 
-$$\mathcal{L} = -\frac{1}{N} \sum_{i=1}^{N} \sum_{t=1}^{T} \log P(x_t | x_{<t}; \theta)$$
+$$\mathcal{L} = -\frac{1}{N} \sum_{i=1}^{N} \sum_{t=1}^{T} \log P(x_t \mid x_{1:t-1}; \theta)$$
 
 | Issue | Cause | Effect |
 |-------|-------|--------|
@@ -233,24 +233,8 @@ PPOConfig(
 )
 ```
 
----
 
-## 📊 Final Model Rankings
 
-Evaluated using **Qwen 2.5-3B as LLM Judge** on 10 queries × 6 models:
-
-| Rank | Model | Overall Score | Non-Repetition |
-|------|-------|---------------|----------------|
-| 🥇 #1 | Stage 2 (Instruction) | 0.674 | 0.783 |
-| 🥈 #2 | GPT-2 Base | 0.670 | 0.784 |
-| 🥉 #3 | Stage 1 (SFT) | 0.670 | 0.787 |
-| #4 | Stage 3 (LoRA) | 0.642 | 0.784 |
-| #5 | InstructGPT SFT | 0.598 | 0.792 |
-| #6 | InstructGPT SFT+PPO | 0.588 | 0.794 |
-
-**Key Insight**: InstructGPT models scored lower on "overall" but highest on non-repetition. They generate more diverse, less rambling text which is actually desirable!
-
----
 
 ## 🏗️ Repository Structure
 
